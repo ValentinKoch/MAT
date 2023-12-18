@@ -390,7 +390,7 @@ def eval2(datasets: tuple, cur: int, args: Namespace):
 
     model.relocate()
     print('Done!')
-    print_network(model)
+    #print_network(model)
     ckpt = torch.load(os.path.join(args.results_dir, "s_{}_checkpoint.pt".format(cur)))
     model.load_state_dict(ckpt, strict=False)
     model.eval()

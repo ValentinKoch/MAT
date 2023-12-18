@@ -169,7 +169,7 @@ def train(datasets: tuple, cur: int, args: Namespace):
     else:
         model = model.to(torch.device('cuda'))
     print('Done!')
-    print_network(model)
+   #print_network(model)
 
     print('\nInit optimizer ...', end=' ')
     optimizer = get_optim(model, args)
