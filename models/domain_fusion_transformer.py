@@ -257,7 +257,8 @@ class MultiTransformer(nn.Module):
 
             handles = register_hooks(model.transformer, attention_matrices, "basis")
             with torch.no_grad():
-                if len(input_data)<4:
+                print("input data len", len(input_data))
+                if len(input_data)!=7:
                         out = model(input_data)
                 else:
                         x_path, x_omic1, x_omic2, x_omic3, x_omic4, x_omic5, x_omic6 =input_data
