@@ -212,9 +212,16 @@ def summary_survival_coattn_importance(model, loader):
 
             with torch.no_grad():
                 hazards, survival, Y_hat, A  = model(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6) # return hazards, S, Y_hat, A_raw, results_dict
-                if i==8: 
+                if i==8:
+                    print("wsi", data_WSI.shape)
+                    print("omic1", data_omic1.shape)
+                    print("omic2", data_omic2.shape)
+                    print("omic3", data_omic3.shape)
+                    print("omic4", data_omic5.shape)
+                    print("omic5", data_omic6.shape)
                     bottom_attention,top_attention=model.attention_rollout(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6)
                     all_attentions.append((bottom_attention,top_attention))
+                    
             risk = (-torch.sum(survival, dim=1).cpu().numpy()).item()
             event_time = event_time.item()
             c = c.item()

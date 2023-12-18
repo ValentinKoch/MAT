@@ -72,6 +72,7 @@ class Transformer(nn.Module):
 
 
     def forward(self, x, use_pos=False, register_hook=False):
+        print("x 0st shape:", x.shape)
         if not self.subnetwork:
             x=torch.cat(x,dim=1)
 
@@ -259,8 +260,9 @@ class MultiTransformer(nn.Module):
             ]
 
             handles = register_hooks(model.transformer, attention_matrices, "basis")
+
             with torch.no_grad():
-                print("input data len", len(input_data))
+                print("input data shape", input_data.shape)
                 if input_data.shape[0]==1:
                         out = model(input_data)
                 else:
@@ -291,21 +293,18 @@ class MultiTransformer(nn.Module):
                 basis_attention_rollout = compute_attention_rollout(basis_transformer, x_i,seq_length,device)
                 basis_attention_rollouts.append(basis_attention_rollout)
 
-
-
         # Compute the attention rollout for the top-level transformer
         top_attention_rollout = compute_attention_rollout(self, input_data,seq_length=len(input_data)+1,device=device)
 
         # Combine the attention rollouts for basis transformers and the top-level transformer
         class_token_top_attention=torch.mean(top_attention_rollout[:, :, class_token_idx, class_token_idx+1:],axis=1)
         attention_rollouts = []
+
         for i,basis_attention_rollout in enumerate(basis_attention_rollouts):
             attention_rollout_combined = class_token_top_attention[:,i]*basis_attention_rollout
-
             attention_rollouts.append(attention_rollout_combined)
 
         # Extract the attention weights for the class token, remove the self-attention from the class token
-
         class_token_attentions_per_head = [attention_rollout[:, :, class_token_idx, class_token_idx+1+self.register:] for attention_rollout in attention_rollouts]
         class_token_attentions=[safe_squeeze(torch.mean(staining_attentions,axis=1).cpu().numpy()) for staining_attentions in class_token_attentions_per_head]
 
