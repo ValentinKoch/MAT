@@ -280,7 +280,7 @@ class MultiTransformer(nn.Module):
         for i, (basis_transformer, x_i) in enumerate(zip(self.basis_transformers, input_data)):
             if input_data[i] is not None and input_data[i].shape[1]>0:
                 device=input_data[i].device
-                input_data.unsqueeze(0)
+                input_data[i]=input_data[i].unsqueeze(0)
                 seq_length = input_data[i].size(1) + 1
                 print("seq_length ", seq_length)
                 basis_attention_rollout = compute_attention_rollout(basis_transformer, x_i,seq_length,device)
