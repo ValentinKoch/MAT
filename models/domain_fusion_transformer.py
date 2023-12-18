@@ -286,7 +286,7 @@ class MultiTransformer(nn.Module):
         for i, (basis_transformer, x_i) in enumerate(zip(self.basis_transformers, input_data)):
             if input_data[i] is not None:
                 device=input_data[i].device
-                x_i=input_data[i].unsqueeze(0)
+                x_i=input_data[i].unsqueeze(0).unsqueeze(0)
                 seq_length = x_i.size(1) + 1
                 print("seq_length ", seq_length)
                 print("x_i shape", x_i.shape)
