@@ -257,8 +257,11 @@ class MultiTransformer(nn.Module):
 
             handles = register_hooks(model.transformer, attention_matrices, "basis")
             with torch.no_grad():
-                out = model(x_path=x_path, x_omic1=x_omic1, x_omic2=x_omic2, x_omic3=x_omic3, x_omic4=x_omic4, x_omic5=x_omic5, x_omic6=x_omic6)
-
+                if len(input_data)<4:
+                        out = model(input_data)
+                else:
+                        x_path, x_omic1, x_omic2, x_omic3, x_omic4, x_omic5, x_omic6 =input_data
+                        out = model(x_path=x_path, x_omic1=x_omic1, x_omic2=x_omic2, x_omic3=x_omic3, x_omic4=x_omic4, x_omic5=x_omic5, x_omic6=x_omic6)
             for handle in handles:
                 handle.remove()
 
