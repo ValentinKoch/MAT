@@ -281,7 +281,7 @@ class MultiTransformer(nn.Module):
             if input_data[i] is not None:
                 device=input_data[i].device
                 x_i=input_data[i].unsqueeze(0)
-                seq_length = input_data[i].size(1) + 1
+                seq_length = x_i.size(1) + 1
                 print("seq_length ", seq_length)
                 basis_attention_rollout = compute_attention_rollout(basis_transformer, x_i,seq_length,device)
                 basis_attention_rollouts.append(basis_attention_rollout)
