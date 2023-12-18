@@ -296,7 +296,12 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                     omic4 = torch.tensor(self.genomic_features[self.omic_names[3]].iloc[idx].values)
                     omic5 = torch.tensor(self.genomic_features[self.omic_names[4]].iloc[idx].values)
                     omic6 = torch.tensor(self.genomic_features[self.omic_names[5]].iloc[idx].values)
-
+                    print("omic1", omic1.shape)
+                    print("omic2", omic2.shape)
+                    print("omic3", omic3.shape)
+                    print("omic4", omic4.shape)
+                    print("omic5", omic5.shape)
+                    print("omic6", omic6.shape)
                     return (path_features, omic1, omic2, omic3, omic4, omic5, omic6, label, event_time, c)
 
                 else:
