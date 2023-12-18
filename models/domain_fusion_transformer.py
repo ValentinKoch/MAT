@@ -74,6 +74,8 @@ class Transformer(nn.Module):
     def forward(self, x, use_pos=False, register_hook=False):
         if not self.subnetwork:
             x=torch.cat(x,dim=1)
+
+        print("x 1st shape:", x.shape)
         b=1
 
         x = self.projection(x)
@@ -83,6 +85,7 @@ class Transformer(nn.Module):
             x = torch.cat((register_token, x), dim=1)
 
         if self.pool == 'cls':
+            print("x 2nd shape:" ,x.shape)
             cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
             x = torch.cat((cls_tokens, x), dim=1)
 
@@ -283,6 +286,7 @@ class MultiTransformer(nn.Module):
                 x_i=input_data[i].unsqueeze(0)
                 seq_length = x_i.size(1) + 1
                 print("seq_length ", seq_length)
+                print("x_i shape", x_i.shape)
                 basis_attention_rollout = compute_attention_rollout(basis_transformer, x_i,seq_length,device)
                 basis_attention_rollouts.append(basis_attention_rollout)
 
