@@ -1,11 +1,7 @@
 from __future__ import print_function, division
-import math
 import os
-import pdb
 import pickle
-import re
-
-import h5py
+import h5py 
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -14,7 +10,6 @@ from sklearn.preprocessing import StandardScaler
 import torch
 from torch.utils.data import Dataset
 
-from utils.utils import generate_split, nth
 
 
 class Generic_WSI_Survival_Dataset(Dataset):
@@ -51,7 +46,7 @@ class Generic_WSI_Survival_Dataset(Dataset):
             slide_data.index = slide_data.index.str[:12]
             slide_data['case_id'] = slide_data.index
             slide_data = slide_data.reset_index(drop=True)
-        import pdb
+
         #pdb.set_trace()
 
         if not label_col:
@@ -123,7 +118,7 @@ class Generic_WSI_Survival_Dataset(Dataset):
         ### Signatures
         self.apply_sig = apply_sig
         if self.apply_sig:
-            self.signatures = pd.read_csv('./dataset_csv_sig/signatures.csv')
+            self.signatures = pd.read_csv('/home/icb/valentin.koch/MAT/datasets_csv_sig/signatures.csv')
         else:
             self.signatures = None
 
@@ -236,6 +231,7 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
         self.use_h5 = toggle
 
     def __getitem__(self, idx):
+        #print(idx)
         case_id = self.slide_data['case_id'][idx]
         label = self.slide_data['disc_label'][idx]
         event_time = self.slide_data[self.label_col][idx]
@@ -270,7 +266,7 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                     path_features = torch.cat(path_features, dim=0)
                     cluster_ids = torch.Tensor(cluster_ids)
                     genomic_features = torch.tensor(self.genomic_features.iloc[idx])
-                    return (path_features, cluster_ids, genomic_features, label, event_time, c)
+                    return (path_features, cluster_ids, genomic_features, label, event_time, c) #c=censorship
 
                 elif self.mode == 'omic':
                     genomic_features = torch.tensor(self.genomic_features.iloc[idx])
@@ -289,16 +285,18 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                 elif self.mode == 'coattn':
                     path_features = []
                     for slide_id in slide_ids:
-                        wsi_path = os.path.join(data_dir, 'pt_files', '{}.pt'.format(slide_id.rstrip('.svs')))
-                        wsi_bag = torch.load(wsi_path)
-                        path_features.append(wsi_bag)
-                    path_features = torch.cat(path_features, dim=0)
-                    omic1 = torch.tensor(self.genomic_features[self.omic_names[0]].iloc[idx])
-                    omic2 = torch.tensor(self.genomic_features[self.omic_names[1]].iloc[idx])
-                    omic3 = torch.tensor(self.genomic_features[self.omic_names[2]].iloc[idx])
-                    omic4 = torch.tensor(self.genomic_features[self.omic_names[3]].iloc[idx])
-                    omic5 = torch.tensor(self.genomic_features[self.omic_names[4]].iloc[idx])
-                    omic6 = torch.tensor(self.genomic_features[self.omic_names[5]].iloc[idx])
+                        wsi_path = os.path.join(data_dir, '{}.h5'.format(slide_id.rstrip('.svs')))
+                        with h5py.File(wsi_path, "r") as f:
+                            wsi_bag=f["feats"]
+                            path_features.append(torch.Tensor(wsi_bag[()]))
+                    path_features = reduce_path_features_randomly(path_features)
+                    omic1 = torch.tensor(self.genomic_features[self.omic_names[0]].iloc[idx].values)
+                    omic2 = torch.tensor(self.genomic_features[self.omic_names[1]].iloc[idx].values)
+                    omic3 = torch.tensor(self.genomic_features[self.omic_names[2]].iloc[idx].values)
+                    omic4 = torch.tensor(self.genomic_features[self.omic_names[3]].iloc[idx].values)
+                    omic5 = torch.tensor(self.genomic_features[self.omic_names[4]].iloc[idx].values)
+                    omic6 = torch.tensor(self.genomic_features[self.omic_names[5]].iloc[idx].values)
+
                     return (path_features, omic1, omic2, omic3, omic4, omic5, omic6, label, event_time, c)
 
                 else:
@@ -306,6 +304,16 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                 ### <--
             else:
                 return slide_ids, label, event_time, c
+
+def reduce_path_features_randomly(path_features, n=10000):
+    # Concatenate the path features along dimension 0
+    concatenated_features = torch.cat(path_features, dim=0)
+    
+    # Create a random permutation of indices
+    indices = torch.randperm(concatenated_features.size(0))
+    
+    # Select the first n features based on the random indices
+    return concatenated_features[indices[:n]]
 
 
 class Generic_Split(Generic_MIL_Survival_Dataset):
@@ -326,8 +334,8 @@ class Generic_Split(Generic_MIL_Survival_Dataset):
         self.genomic_features = self.slide_data.drop(self.metadata, axis=1)
         self.signatures = signatures
 
-        with open(os.path.join(data_dir, 'fast_cluster_ids.pkl'), 'rb') as handle:
-            self.fname2ids = pickle.load(handle)
+        #with open(os.path.join(data_dir, 'fast_cluster_ids.pkl'), 'rb') as handle:
+        #    self.fname2ids = pickle.load(handle)
 
         def series_intersection(s1, s2):
             return pd.Series(list(set(s1) & set(s2)))

@@ -174,9 +174,9 @@ def summary_survival_cluster(model, loader, n_classes, VAE):
             hazards, survival, Y_hat, _, _ = model(x_path=data_WSI, cluster_id=cluster_id, x_omic=data_omic, meta=meta) # return hazards, S, Y_hat, A_raw, results_dict
 
 
-        risk = np.asscalar(-torch.sum(survival, dim=1).cpu().numpy())
-        event_time = np.asscalar(event_time)
-        c = np.asscalar(c)
+        risk = (-torch.sum(survival, dim=1).cpu().numpy()).item()
+        event_time = event_time.item()
+        c = c.item()
         all_risk_scores[batch_idx] = risk
         all_censorships[batch_idx] = c
         all_event_times[batch_idx] = event_time

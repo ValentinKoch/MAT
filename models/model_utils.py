@@ -1,15 +1,7 @@
-from collections import OrderedDict
-from os.path import join
-import math
-import pdb
-
-import numpy as np
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-
+import random
+import numpy as np
 
 class BilinearFusion(nn.Module):
     r"""
@@ -160,3 +152,27 @@ def init_max_weights(module):
             stdv = 1. / math.sqrt(m.weight.size(1))
             m.weight.data.normal_(0, stdv)
             m.bias.data.zero_()
+
+def generate_dropout_list(x, p):
+    n=len(x)
+    values = [False] * n  # Initialize the list with n False values
+    randint = random.randint(0, n - 1)
+    values[randint] = True  # Set one random entry to True
+
+    if x[randint] is None or x[randint].numel() == 0:
+        return generate_dropout_list(x,n, p)
+    
+    for i in range(n):
+        if not values[i]:  # For each remaining entry
+            if random.random() < 1 - p:  # Generate a random number between 0 and 1
+                values[i] = True  # Set the entry to True with probability p
+
+    return values
+
+def safe_squeeze(arr):
+    # Squeeze the array
+    squeezed = np.squeeze(arr)
+    # If squeezing resulted in a scalar, convert it to a 1D array
+    if squeezed.ndim == 0:
+        squeezed = np.array([squeezed])
+    return squeezed

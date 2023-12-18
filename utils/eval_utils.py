@@ -397,8 +397,6 @@ def eval2(datasets: tuple, cur: int, args: Namespace):
 
     
     print('\nInit Loaders...', end=' ')
-    train_loader = get_split_loader(train_split, training=True, testing = args.testing, 
-                                    weighted = args.weighted_sample, task_type=args.task_type, batch_size=args.batch_size)
     val_loader = get_split_loader(val_split,  testing = args.testing, task_type=args.task_type, batch_size=args.batch_size)
     test_loader = get_split_loader(test_split, testing = args.testing, task_type=args.task_type, batch_size=args.batch_size)
     print('Done!')

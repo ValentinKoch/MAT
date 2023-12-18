@@ -1,9 +1,6 @@
 from argparse import Namespace
-from collections import OrderedDict
 import os
-import pickle 
 
-from lifelines.utils import concordance_index
 import numpy as np
 from sksurv.metrics import concordance_index_censored
 
@@ -13,6 +10,7 @@ from datasets.dataset_generic import save_splits
 from models.model_genomic import SNN
 from models.model_set_mil import MIL_Sum_FC_surv, MIL_Attention_FC_surv, MIL_Cluster_FC_surv
 from models.model_coattn import MCAT_Surv
+from models.domain_fusion_transformer import MultiTransformer
 from utils.utils import *
 
 from utils.coattn_train_utils import *
@@ -160,6 +158,9 @@ def train(datasets: tuple, cur: int, args: Namespace):
     elif args.model_type == 'mcat':
         model_dict = {'fusion': args.fusion, 'omic_sizes': args.omic_sizes, 'n_classes': args.n_classes}
         model = MCAT_Surv(**model_dict)
+    elif args.model_type == 'multi':
+        model_dict = {'input_dims': [768]+args.omic_sizes, 'n_classes': args.n_classes}
+        model = MultiTransformer(**model_dict)
     else:
         raise NotImplementedError
     
@@ -175,9 +176,9 @@ def train(datasets: tuple, cur: int, args: Namespace):
     print('Done!')
     
     print('\nInit Loaders...', end=' ')
-    train_loader = get_split_loader(train_split, training=True, testing = args.testing, 
+    train_loader = get_split_loader(train_split, training=True, testing = False, 
         weighted = args.weighted_sample, mode=args.mode, batch_size=args.batch_size)
-    val_loader = get_split_loader(val_split,  testing = args.testing, mode=args.mode, batch_size=args.batch_size)
+    val_loader = get_split_loader(val_split,  testing = False, mode=args.mode, batch_size=args.batch_size)
     print('Done!')
 
     print('\nSetup EarlyStopping...', end=' ')
@@ -201,10 +202,12 @@ def train(datasets: tuple, cur: int, args: Namespace):
 
     torch.save(model.state_dict(), os.path.join(args.results_dir, "s_{}_checkpoint.pt".format(cur)))
     model.load_state_dict(torch.load(os.path.join(args.results_dir, "s_{}_checkpoint.pt".format(cur))))
-    results_val_dict, val_cindex = summary_survival(model, val_loader, args.n_classes)
-    print('Val c-Index: {:.4f}'.format(val_cindex))
+    #results_val_dict, val_cindex = summary_survival_coattn(model, val_loader, args.n_classes) #summary_survival_coattn_importance
+    results_val_dict, val_cindex,attentions = summary_survival_coattn_importance(model, val_loader) 
+
+    print(val_cindex)
     writer.close()
-    return results_val_dict, val_cindex
+    return results_val_dict, val_cindex,attentions
 
 
 def train_loop_survival(epoch, model, loader, optimizer, n_classes, writer=None, loss_fn=None, reg_fn=None, lambda_reg=0., gc=16):   
@@ -339,9 +342,9 @@ def summary_survival(model, loader, n_classes):
         with torch.no_grad():
             hazards, survival, Y_hat, _, _ = model(x_path=data_WSI, x_omic=data_omic)
 
-        risk = np.asscalar(-torch.sum(survival, dim=1).cpu().numpy())
-        event_time = np.asscalar(event_time)
-        c = np.asscalar(c)
+        risk = (-torch.sum(survival, dim=1).cpu().numpy()).item()
+        event_time = event_time.item()
+        c = c.item()
         all_risk_scores[batch_idx] = risk
         all_censorships[batch_idx] = c
         all_event_times[batch_idx] = event_time

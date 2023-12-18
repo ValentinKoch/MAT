@@ -1,9 +1,3 @@
-from collections import OrderedDict
-from os.path import join
-import pdb
-
-import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -22,7 +16,7 @@ class MCAT_Surv(nn.Module):
         self.fusion = fusion
         self.omic_sizes = omic_sizes
         self.n_classes = n_classes
-        self.size_dict_WSI = {"small": [1024, 256, 256], "big": [1024, 512, 384]}
+        self.size_dict_WSI = {"small": [1024, 256, 256], "big": [768, 512, 384]} #resnet:1024, ctranspath 768
         self.size_dict_omic = {'small': [256, 256], 'big': [1024, 1024, 1024, 256]}
         
         ### FC Layer over WSI bag
@@ -471,7 +465,7 @@ def multi_head_attention_forward(
 
 import torch
 from torch import Tensor
-from torch.nn.modules.linear import _LinearWithBias
+from torch.nn.modules.linear import NonDynamicallyQuantizableLinear as _LinearWithBias
 from torch.nn.init import xavier_uniform_
 from torch.nn.init import constant_
 from torch.nn.init import xavier_normal_
@@ -573,8 +567,8 @@ class MultiheadAttention(Module):
 
     def forward(self, query, key, value, key_padding_mask=None,
                 need_weights=True, need_raw=True, attn_mask=None):
-        # type: (Tensor, Tensor, Tensor, Optional[Tensor], bool, Optional[Tensor]) -> Tuple[Tensor, Optional[Tensor]]
-        r"""
+        ## type: (Tensor, Tensor, Tensor, Optional[Tensor], bool, Optional[Tensor]) -> Tuple[Tensor, Optional[Tensor]]
+        """
     Args:
         query, key, value: map a query and a set of key-value pairs to an output.
             See "Attention Is All You Need" for more details.

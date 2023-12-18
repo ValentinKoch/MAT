@@ -96,16 +96,17 @@ def get_split_loader(split_dataset, training = False, testing = False, weighted 
 
     kwargs = {'num_workers': 4} if device.type == "cuda" else {}
     if not testing:
-        if training:
+
+        if training: #not testing, training
             if weighted:
                 weights = make_weights_for_balanced_classes_split(split_dataset)
                 loader = DataLoader(split_dataset, batch_size=batch_size, sampler = WeightedRandomSampler(weights, len(weights)), collate_fn = collate, **kwargs)    
             else:
                 loader = DataLoader(split_dataset, batch_size=batch_size, sampler = RandomSampler(split_dataset), collate_fn = collate, **kwargs)
-        else:
+        else: #not testing, not training (=val?)
             loader = DataLoader(split_dataset, batch_size=batch_size, sampler = SequentialSampler(split_dataset), collate_fn = collate, **kwargs)
     
-    else:
+    else: #testing
         ids = np.random.choice(np.arange(len(split_dataset), int(len(split_dataset)*0.1)), replace = False)
         loader = DataLoader(split_dataset, batch_size=1, sampler = SubsetSequentialSampler(ids), collate_fn = collate, **kwargs )
 
@@ -116,6 +117,8 @@ def get_optim(model, args):
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, weight_decay=args.reg)
     elif args.opt == 'sgd':
         optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, momentum=0.9, weight_decay=args.reg)
+    elif args.opt == "adamw":
+        optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, weight_decay=args.reg)
     else:
         raise NotImplementedError
     return optimizer
@@ -384,6 +387,8 @@ def get_custom_exp_code(args):
       param_code += 'MIFCN'
     elif args.model_type == 'mcat':
       param_code += 'MCAT'
+    elif args.model_type == 'multi':
+      param_code += 'MTF'
     else:
       raise NotImplementedError
 
