@@ -286,7 +286,7 @@ class MultiTransformer(nn.Module):
         for i, (basis_transformer, x_i) in enumerate(zip(self.basis_transformers, input_data)):
             if input_data[i] is not None:
                 device=input_data[i].device
-                x_i=input_data[i].unsqueeze(0).unsqueeze(0)
+                x_i=input_data[i].unsqueeze(0)
                 seq_length = x_i.size(1) + 1
                 print("seq_length ", seq_length)
                 print("x_i shape", x_i.shape)
@@ -308,5 +308,5 @@ class MultiTransformer(nn.Module):
         class_token_attentions_per_head = [attention_rollout[:, :, class_token_idx, class_token_idx+1+self.register:] for attention_rollout in attention_rollouts]
         class_token_attentions=[safe_squeeze(torch.mean(staining_attentions,axis=1).cpu().numpy()) for staining_attentions in class_token_attentions_per_head]
 
-        return class_token_attentions,safe_squeeze(class_token_top_attention.cpu().numpy())
+        return class_token_attentions, safe_squeeze(class_token_top_attention.cpu().numpy())
 
