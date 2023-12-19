@@ -192,6 +192,15 @@ def summary_survival_coattn_importance(model, loader):
 
         for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
             data_WSI = data_WSI.to(device)
+            
+            print("batch_idx", batch_idx)
+            print("wsi1", data_WSI.shape)
+            print("omic11", data_omic1.shape)
+            print("omic21", data_omic2.shape)
+            print("omic31", data_omic3.shape)
+            print("omic41", data_omic5.shape)
+            print("omic51", data_omic6.shape)
+
             data_omic1 = data_omic1.type(torch.FloatTensor).to(device)
             data_omic2 = data_omic2.type(torch.FloatTensor).to(device)
             data_omic3 = data_omic3.type(torch.FloatTensor).to(device)
