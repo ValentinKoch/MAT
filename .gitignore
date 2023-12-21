@@ -6,3 +6,7 @@
 *.pkl
 *.pyc
 results/*
+*.npy
+*.out
+*.png
+*.h5

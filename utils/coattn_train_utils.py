@@ -189,17 +189,9 @@ def summary_survival_coattn_importance(model, loader):
     c_indeces=[]
     all_attentions=[]
     for i in range(9):
-
+        print(i, " of ", 9)
         for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
             data_WSI = data_WSI.to(device)
-            
-            print("batch_idx", batch_idx)
-            print("wsi1", data_WSI.shape)
-            print("omic11", data_omic1.shape)
-            print("omic21", data_omic2.shape)
-            print("omic31", data_omic3.shape)
-            print("omic41", data_omic5.shape)
-            print("omic51", data_omic6.shape)
 
             data_omic1 = data_omic1.type(torch.FloatTensor).to(device)
             data_omic2 = data_omic2.type(torch.FloatTensor).to(device)
@@ -222,14 +214,8 @@ def summary_survival_coattn_importance(model, loader):
             with torch.no_grad():
                 hazards, survival, Y_hat, A  = model(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6) # return hazards, S, Y_hat, A_raw, results_dict
                 if i==8:
-                    print("wsi", data_WSI.shape)
-                    print("omic1", data_omic1.shape)
-                    print("omic2", data_omic2.shape)
-                    print("omic3", data_omic3.shape)
-                    print("omic4", data_omic5.shape)
-                    print("omic5", data_omic6.shape)
                     bottom_attention,top_attention=model.attention_rollout(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6)
-                    all_attentions.append((bottom_attention,top_attention))
+                    all_attentions.append((slide_id,bottom_attention,top_attention))
                     
             risk = (-torch.sum(survival, dim=1).cpu().numpy()).item()
             event_time = event_time.item()
@@ -244,17 +230,16 @@ def summary_survival_coattn_importance(model, loader):
 
 
     for i in range(7):
-
+        print(i, " of ", 7)
         for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
-            data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,None,None,None
 
-            if i==0:  data_WSI = data_WSI.to(device)
-            if i==1: data_omic1 = data_omic1.type(torch.FloatTensor).to(device)
-            if i==2: data_omic2 = data_omic2.type(torch.FloatTensor).to(device)
-            if i==3: data_omic3 = data_omic3.type(torch.FloatTensor).to(device)
-            if i==4: data_omic4 = data_omic4.type(torch.FloatTensor).to(device)
-            if i==5: data_omic5 = data_omic5.type(torch.FloatTensor).to(device)
-            if i==6: data_omic6 = data_omic6.type(torch.FloatTensor).to(device)
+            if i==0:  data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6=data_WSI.to(device), None,None,None,None,None,None
+            if i==1: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,data_omic1.type(torch.FloatTensor).to(device),None,None,None,None,None
+            if i==2: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,data_omic2.type(torch.FloatTensor).to(device),None,None,None,None
+            if i==3: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,data_omic3.type(torch.FloatTensor).to(device),None,None,None
+            if i==4: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,data_omic4.type(torch.FloatTensor).to(device),None,None
+            if i==5: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,None,data_omic5.type(torch.FloatTensor).to(device),None
+            if i==6: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,None,None,data_omic6.type(torch.FloatTensor).to(device)
             label = label.type(torch.LongTensor).to(device)
 
             c = c.type(torch.FloatTensor).to(device)

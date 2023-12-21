@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 from timeit import default_timer as timer
-
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
@@ -36,6 +36,8 @@ def main(args):
 	folds = np.arange(start, end)
 	all_attentions=[]
 	### Start 5-Fold CV Evaluation.
+	(Path(args.results_dir)/"bottom_attention").mkdir(parents=True, exist_ok=True)
+	(Path(args.results_dir)/"top_attention").mkdir(parents=True, exist_ok=True)
 	for i in folds:
 		start = timer()
 		seed_torch(args.seed)
@@ -66,7 +68,10 @@ def main(args):
 			val_latest, cindex_latest,attentions = train(datasets, i, args)
 			all_attentions.append(attentions)
 			latest_val_cindex.append(cindex_latest)
-
+			for slide_attention in attentions:
+				name=slide_attention[0]
+				np.save(Path(args.results_dir)/"bottom_attention"/name, np.array(slide_attention[1][0]))
+				np.save(Path(args.results_dir)/"top_attention"/name, np.array(slide_attention[2]))
 		### Write Results for Each Split to PKL
 		save_pkl(results_pkl_path, val_latest)
 		end = timer()
@@ -75,9 +80,7 @@ def main(args):
 	### Finish 5-Fold CV Evaluation.
 	if args.task_type == 'survival':
 		results_latest_df = pd.DataFrame({'folds': folds, 'val_cindex': latest_val_cindex})
-		attention_df = pd.DataFrame({'folds': folds, 'attentions': all_attentions})
-		
-	attention_df.to_csv(os.path.join(args.results_dir, 'attentions.csv'))
+
 	results_latest_df.to_csv(os.path.join(args.results_dir, 'summary_latest.csv'))
 
 ### Training settings
@@ -89,14 +92,14 @@ def main(args):
 
 parser = argparse.ArgumentParser(description='Configurations for Survival Analysis on TCGA Data.')
 ### Checkpoint + Misc. Pathing Parameters
-parser.add_argument('--data_root_dir',   type=str, default='/mnt/ceph_vol/tcga_mat', help='Data directory to WSI features (extracted via CLAM')
+parser.add_argument('--data_root_dir',   type=str, default='/mnt/ceph_vol/UCEC/features', help='Data directory to WSI features (extracted via CLAM')
 parser.add_argument('--seed', 			 type=int, default=1, help='Random seed for reproducible experiment (default: 1)')
 parser.add_argument('--k', 			     type=int, default=5, help='Number of folds (default: 5)')
 parser.add_argument('--k_start',		 type=int, default=-1, help='Start fold (Default: -1, last fold)')
 parser.add_argument('--k_end',			 type=int, default=-1, help='End fold (Default: -1, first fold)')
 parser.add_argument('--results_dir',     type=str, default='./results', help='Results directory (Default: ./results)')
 parser.add_argument('--which_splits',    type=str, default='5foldcv', help='Which splits folder to use in ./splits/ (Default: ./splits/5foldcv')
-parser.add_argument('--split_dir',       type=str, default='tcga_blca', help='Which cancer type within ./splits/<which_splits> to use for training. Used synonymously for "task" (Default: tcga_blca_100)')
+parser.add_argument('--split_dir',       type=str, default='tcga_ucec', help='Which cancer type within ./splits/<which_splits> to use for training. Used synonymously for "task" (Default: tcga_blca_100)')
 parser.add_argument('--log_data',        action='store_true', default=True, help='Log data using tensorboard')
 parser.add_argument('--overwrite',     	 action='store_true', default=False, help='Whether or not to overwrite experiments (if already ran)')
 
@@ -114,7 +117,7 @@ parser.add_argument('--model_size_omic', type=str, default='small', help='Networ
 parser.add_argument('--opt',             type=str, choices = ['adam','adamw', 'sgd'], default='adamw')
 parser.add_argument('--batch_size',      type=int, default=1, help='Batch Size (Default: 1, due to varying bag sizes)')
 parser.add_argument('--gc',              type=int, default=15, help='Gradient Accumulation Step.')
-parser.add_argument('--max_epochs',      type=int, default=20, help='Maximum number of epochs to train (default: 20)')
+parser.add_argument('--max_epochs',      type=int, default=12, help='Maximum number of epochs to train (default: 20)')
 parser.add_argument('--lr',				 type=float, default=2e-5, help='Learning rate (default: 0.0001)')
 parser.add_argument('--bag_loss',        type=str, choices=['svm', 'ce', 'ce_surv', 'nll_surv', 'cox_surv'], default='nll_surv', help='slide-level classification loss function (default: ce)')
 parser.add_argument('--label_frac',      type=float, default=1.0, help='fraction of training labels (default: 1.0)')
@@ -211,9 +214,6 @@ args.results_dir = os.path.join(args.results_dir, args.which_splits, args.param_
 if not os.path.isdir(args.results_dir):
 	os.makedirs(args.results_dir)
 
-if ('summary_latest.csv' in os.listdir(args.results_dir)) and (not args.overwrite):
-	print("Exp Code <%s> already exists! Exiting script." % args.exp_code)
-	sys.exit()
 
 ### Sets the absolute path of split_dir
 args.split_dir = os.path.join('./splits', args.which_splits, args.split_dir)
