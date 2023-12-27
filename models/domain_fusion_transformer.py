@@ -149,6 +149,7 @@ class MultiTransformer(nn.Module):
         cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
         if not self.test_mode:
             dropout_list= generate_dropout_list(x,self.stain_dropout)
+            dropout_list[0]=True
         else:
             dropout_list= [True]+[True]*(len(x)-1)
         for i, x_i in enumerate(x):
@@ -231,7 +232,7 @@ class MultiTransformer(nn.Module):
         self.eval()
         input_data=(x_path, x_omic1, x_omic2, x_omic3, x_omic4, x_omic5, x_omic6)
         # Hook function to capture the attention weights
-        def hook(attention_matrices, module, input_data, output):
+        def hook(attention_matrices, module,a,b):
             attention_weights = module.get_attention_map()  # Get attention map from the custom Attention class
             layer_idx = int(module.name.split('_')[-1])
             attention_matrices[layer_idx] = attention_weights.detach()
@@ -269,10 +270,10 @@ class MultiTransformer(nn.Module):
                 handle.remove()
 
             attention_matrices_combined = attention_matrices[0]
-            for i in range(1, num_layers):
-                attention_matrices_combined = torch.matmul(attention_matrices[i], attention_matrices_combined)
 
-            return attention_matrices_combined
+            for i in range(1, num_layers):
+                attention_matrices_combined = torch.matmul(attention_matrices_combined, attention_matrices[i])
+            return attention_matrices_combined[0]
 
         # Compute the attention rollouts for each basis transformer
         basis_attention_rollouts = []
@@ -292,16 +293,12 @@ class MultiTransformer(nn.Module):
         top_attention_rollout = compute_attention_rollout(self, input_data,seq_length=len(input_data)+1,device=device)
 
         # Combine the attention rollouts for basis transformers and the top-level transformer
-        class_token_top_attention=torch.mean(top_attention_rollout[:, :, class_token_idx, class_token_idx+1:],axis=1)
-        attention_rollouts = []
+        class_token_top_attention=top_attention_rollout[:,class_token_idx, class_token_idx+1:]
 
-        for i,basis_attention_rollout in enumerate(basis_attention_rollouts):
-            attention_rollout_combined = class_token_top_attention[:,i]*basis_attention_rollout
-            attention_rollouts.append(attention_rollout_combined)
 
         # Extract the attention weights for the class token, remove the self-attention from the class token
-        class_token_attentions_per_head = [attention_rollout[:, :, class_token_idx, class_token_idx+1+self.register:] for attention_rollout in attention_rollouts]
-        class_token_attentions=[safe_squeeze(torch.mean(staining_attentions,axis=1).cpu().numpy()) for staining_attentions in class_token_attentions_per_head]
+        class_token_basis_attentions = [(attention_rollout[:,class_token_idx, class_token_idx+1:]).cpu().numpy() for attention_rollout in basis_attention_rollouts]
 
-        return class_token_attentions, safe_squeeze(class_token_top_attention.cpu().numpy())
+
+        return class_token_basis_attentions, safe_squeeze(class_token_top_attention.cpu().numpy())
 

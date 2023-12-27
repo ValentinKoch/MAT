@@ -118,7 +118,7 @@ class Generic_WSI_Survival_Dataset(Dataset):
         ### Signatures
         self.apply_sig = apply_sig
         if self.apply_sig:
-            self.signatures = pd.read_csv('/home/icb/valentin.koch/MAT/datasets_csv_sig/signatures.csv')
+            self.signatures = pd.read_csv('/mnt/ceph_vol/MAT/dataset_csv/signatures.csv')
         else:
             self.signatures = None
 
@@ -309,11 +309,14 @@ def reduce_path_features_randomly(path_features, n=10000):
     # Concatenate the path features along dimension 0
     concatenated_features = torch.cat(path_features, dim=0)
     
-    # Create a random permutation of indices
-    indices = torch.randperm(concatenated_features.size(0))
+    if concatenated_features.shape[0]>n:
+        # Create a random permutation of indices
+        indices = torch.randperm(concatenated_features.size(0))
+        # Select the first n features based on the random indices
+        return concatenated_features[indices[:n]]
     
-    # Select the first n features based on the random indices
-    return concatenated_features[indices[:n]]
+    else:
+        return concatenated_features
 
 
 class Generic_Split(Generic_MIL_Survival_Dataset):

@@ -203,11 +203,11 @@ def train(datasets: tuple, cur: int, args: Namespace):
     torch.save(model.state_dict(), os.path.join(args.results_dir, "s_{}_checkpoint.pt".format(cur)))
     model.load_state_dict(torch.load(os.path.join(args.results_dir, "s_{}_checkpoint.pt".format(cur))))
     #results_val_dict, val_cindex = summary_survival_coattn(model, val_loader, args.n_classes) #summary_survival_coattn_importance
-    results_val_dict, val_cindex,attentions = summary_survival_coattn_importance(model, val_loader) 
+    results_val_dict, val_cindex,attentions,patch_risk = summary_survival_coattn_importance(model, val_loader) 
 
     print(val_cindex)
     writer.close()
-    return results_val_dict, val_cindex,attentions
+    return results_val_dict, val_cindex,attentions,patch_risk
 
 
 def train_loop_survival(epoch, model, loader, optimizer, n_classes, writer=None, loss_fn=None, reg_fn=None, lambda_reg=0., gc=16):   

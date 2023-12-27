@@ -38,6 +38,7 @@ def main(args):
 	### Start 5-Fold CV Evaluation.
 	(Path(args.results_dir)/"bottom_attention").mkdir(parents=True, exist_ok=True)
 	(Path(args.results_dir)/"top_attention").mkdir(parents=True, exist_ok=True)
+	(Path(args.results_dir)/"patch_risk").mkdir(parents=True, exist_ok=True)
 	for i in folds:
 		start = timer()
 		seed_torch(args.seed)
@@ -65,13 +66,17 @@ def main(args):
 
 		### Run Train-Val on Survival Task.
 		if args.task_type == 'survival':
-			val_latest, cindex_latest,attentions = train(datasets, i, args)
+			val_latest, cindex_latest,attentions,patch_risks = train(datasets, i, args)
 			all_attentions.append(attentions)
 			latest_val_cindex.append(cindex_latest)
 			for slide_attention in attentions:
 				name=slide_attention[0]
-				np.save(Path(args.results_dir)/"bottom_attention"/name, np.array(slide_attention[1][0]))
-				np.save(Path(args.results_dir)/"top_attention"/name, np.array(slide_attention[2]))
+				np.save(Path(args.results_dir)/"bottom_attention"/name, slide_attention[1][0])
+				np.save(Path(args.results_dir)/"top_attention"/name, slide_attention[2])
+				
+			for patch_risk in patch_risks:
+				name=patch_risk[0]
+				np.save(Path(args.results_dir)/"patch_risk"/name, patch_risk[1])
 		### Write Results for Each Split to PKL
 		save_pkl(results_pkl_path, val_latest)
 		end = timer()
@@ -116,8 +121,8 @@ parser.add_argument('--model_size_omic', type=str, default='small', help='Networ
 ### Optimizer Parameters + Survival Loss Function
 parser.add_argument('--opt',             type=str, choices = ['adam','adamw', 'sgd'], default='adamw')
 parser.add_argument('--batch_size',      type=int, default=1, help='Batch Size (Default: 1, due to varying bag sizes)')
-parser.add_argument('--gc',              type=int, default=15, help='Gradient Accumulation Step.')
-parser.add_argument('--max_epochs',      type=int, default=12, help='Maximum number of epochs to train (default: 20)')
+parser.add_argument('--gc',              type=int, default=16, help='Gradient Accumulation Step.')
+parser.add_argument('--max_epochs',      type=int, default=1, help='Maximum number of epochs to train (default: 20)')
 parser.add_argument('--lr',				 type=float, default=2e-5, help='Learning rate (default: 0.0001)')
 parser.add_argument('--bag_loss',        type=str, choices=['svm', 'ce', 'ce_surv', 'nll_surv', 'cox_surv'], default='nll_surv', help='slide-level classification loss function (default: ce)')
 parser.add_argument('--label_frac',      type=float, default=1.0, help='fraction of training labels (default: 1.0)')
