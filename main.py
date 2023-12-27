@@ -106,8 +106,8 @@ parser.add_argument('--results_dir',     type=str, default='./results', help='Re
 parser.add_argument('--which_splits',    type=str, default='5foldcv', help='Which splits folder to use in ./splits/ (Default: ./splits/5foldcv')
 parser.add_argument('--split_dir',       type=str, default='tcga_ucec', help='Which cancer type within ./splits/<which_splits> to use for training. Used synonymously for "task" (Default: tcga_blca_100)')
 parser.add_argument('--log_data',        action='store_true', default=True, help='Log data using tensorboard')
-parser.add_argument('--overwrite',     	 action='store_true', default=False, help='Whether or not to overwrite experiments (if already ran)')
-
+parser.add_argument('--overwrite',     	 action='store_true', default=True, help='Whether or not to overwrite experiments (if already ran)')
+parser.add_argument('--sig_path',        type=str, default='/mnt/ceph_vol/MAT/datasets_csv_sig/signatures.csv')
 ### Model Parameters.
 parser.add_argument('--model_type',      type=str, choices=['snn', 'deepset', 'amil', 'mi_fcn', 'mcat',"'multi"], default='multi', help='Type of model (Default: mcat)')
 parser.add_argument('--mode',            type=str, choices=['omic', 'path', 'pathomic', 'cluster', 'coattn'], default='coattn', help='Specifies which modalities to use / collate function in dataloader.')
@@ -192,6 +192,7 @@ if 'survival' in args.task:
 		combined_study = study
 	study_dir = combined_study
 	dataset = Generic_MIL_Survival_Dataset(csv_path = './%s/%s_all_clean.csv' % (args.dataset_path, combined_study),
+										   sig_path=args.sig_path,
 										   mode = args.mode,
 										   apply_sig = args.apply_sig,
 										   data_dir= args.data_root_dir,

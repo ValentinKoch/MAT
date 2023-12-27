@@ -14,7 +14,7 @@ from torch.utils.data import Dataset
 
 class Generic_WSI_Survival_Dataset(Dataset):
     def __init__(self,
-        csv_path = 'dataset_csv/ccrcc_clean.csv', mode = 'omic', apply_sig = False,
+        csv_path = 'dataset_csv/ccrcc_clean.csv',sig_path="", mode = 'omic', apply_sig = False,
         shuffle = False, seed = 7, print_info = True, n_bins = 4, ignore=[],
         patient_strat=False, label_col = None, filter_dict = {}, eps=1e-6):
         r"""
@@ -118,7 +118,7 @@ class Generic_WSI_Survival_Dataset(Dataset):
         ### Signatures
         self.apply_sig = apply_sig
         if self.apply_sig:
-            self.signatures = pd.read_csv('/mnt/ceph_vol/MAT/dataset_csv/signatures.csv')
+            self.signatures = pd.read_csv(sig_path)
         else:
             self.signatures = None
 
