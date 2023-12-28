@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import argparse
 import os
-import sys
 from timeit import default_timer as timer
 from pathlib import Path
 import numpy as np
@@ -107,27 +106,27 @@ parser.add_argument('--which_splits',    type=str, default='5foldcv', help='Whic
 parser.add_argument('--split_dir',       type=str, default='tcga_ucec', help='Which cancer type within ./splits/<which_splits> to use for training. Used synonymously for "task" (Default: tcga_blca_100)')
 parser.add_argument('--log_data',        action='store_true', default=True, help='Log data using tensorboard')
 parser.add_argument('--overwrite',     	 action='store_true', default=True, help='Whether or not to overwrite experiments (if already ran)')
-parser.add_argument('--sig_path',        type=str, default='/mnt/ceph_vol/MAT/datasets_csv_sig/signatures.csv')
+parser.add_argument('--sig_path',        type=str, default='/mnt/ceph_vol/MAT/dataset_csv_sig/signatures.csv')
 ### Model Parameters.
-parser.add_argument('--model_type',      type=str, choices=['snn', 'deepset', 'amil', 'mi_fcn', 'mcat',"'multi"], default='multi', help='Type of model (Default: mcat)')
+parser.add_argument('--model_type',      type=str, choices=['snn', 'deepset', 'amil', 'mi_fcn', 'mcat',"'multi"], default='mcat', help='Type of model (Default: mcat)')
 parser.add_argument('--mode',            type=str, choices=['omic', 'path', 'pathomic', 'cluster', 'coattn'], default='coattn', help='Specifies which modalities to use / collate function in dataloader.')
 parser.add_argument('--fusion',          type=str, choices=['None', 'concat', 'bilinear'], default='concat', help='Type of fusion. (Default: concat).')
-parser.add_argument('--apply_sig',		 action='store_true', default=True, help='Use genomic features as signature embeddings.')
+parser.add_argument('--apply_sig',		 action='store_true', default=False, help='Use genomic features as signature embeddings.')
 parser.add_argument('--apply_sigfeats',  action='store_true', default=False, help='Use genomic features as tabular features.')
 parser.add_argument('--drop_out',        action='store_true', default=True, help='Enable dropout (p=0.25)')
 parser.add_argument('--model_size_wsi',  type=str, default='small', help='Network size of AMIL model')
 parser.add_argument('--model_size_omic', type=str, default='small', help='Network size of SNN model')
 
 ### Optimizer Parameters + Survival Loss Function
-parser.add_argument('--opt',             type=str, choices = ['adam','adamw', 'sgd'], default='adamw')
+parser.add_argument('--opt',             type=str, choices = ['adam','adamw', 'sgd'], default='adam')
 parser.add_argument('--batch_size',      type=int, default=1, help='Batch Size (Default: 1, due to varying bag sizes)')
-parser.add_argument('--gc',              type=int, default=16, help='Gradient Accumulation Step.')
-parser.add_argument('--max_epochs',      type=int, default=1, help='Maximum number of epochs to train (default: 20)')
-parser.add_argument('--lr',				 type=float, default=2e-5, help='Learning rate (default: 0.0001)')
+parser.add_argument('--gc',              type=int, default=32, help='Gradient Accumulation Step.')
+parser.add_argument('--max_epochs',      type=int, default=20, help='Maximum number of epochs to train (default: 20)')
+parser.add_argument('--lr',				 type=float, default=2e-4, help='Learning rate (default: 0.0001)')
 parser.add_argument('--bag_loss',        type=str, choices=['svm', 'ce', 'ce_surv', 'nll_surv', 'cox_surv'], default='nll_surv', help='slide-level classification loss function (default: ce)')
 parser.add_argument('--label_frac',      type=float, default=1.0, help='fraction of training labels (default: 1.0)')
 parser.add_argument('--bag_weight',      type=float, default=0.7, help='clam: weight coefficient for bag-level loss (default: 0.7)')
-parser.add_argument('--reg', 			 type=float, default=2e-5, help='L2-regularization weight decay (default: 1e-5)')
+parser.add_argument('--reg', 			 type=float, default=1e-5, help='L2-regularization weight decay (default: 1e-5)')
 parser.add_argument('--alpha_surv',      type=float, default=0.0, help='How much to weigh uncensored patients')
 parser.add_argument('--reg_type',        type=str, choices=['None', 'omic', 'pathomic'], default='None', help='Which network submodules to apply L1-Regularization (default: None)')
 parser.add_argument('--lambda_reg',      type=float, default=1e-4, help='L1-Regularization Strength (Default 1e-4)')

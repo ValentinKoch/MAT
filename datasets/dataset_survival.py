@@ -249,9 +249,10 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                 if self.mode == 'path':
                     path_features = []
                     for slide_id in slide_ids:
-                        wsi_path = os.path.join(data_dir, 'pt_files', '{}.pt'.format(slide_id.rstrip('.svs')))
-                        wsi_bag = torch.load(wsi_path)
-                        path_features.append(wsi_bag)
+                        wsi_path = os.path.join(data_dir, '{}.h5'.format(slide_id.rstrip('.svs')))
+                        with h5py.File(wsi_path, "r") as f:
+                            wsi_bag=f["feats"]
+                            path_features.append(torch.Tensor(wsi_bag[()]))
                     path_features = torch.cat(path_features, dim=0)
                     return (path_features, torch.zeros((1,1)), label, event_time, c)
 
@@ -259,10 +260,12 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                     path_features = []
                     cluster_ids = []
                     for slide_id in slide_ids:
-                        wsi_path = os.path.join(data_dir, 'pt_files', '{}.pt'.format(slide_id.rstrip('.svs')))
-                        wsi_bag = torch.load(wsi_path)
-                        path_features.append(wsi_bag)
-                        cluster_ids.extend(self.fname2ids[slide_id[:-4]+'.pt'])
+                        wsi_path = os.path.join(data_dir, '{}.h5'.format(slide_id.rstrip('.svs')))
+                        with h5py.File(wsi_path, "r") as f:
+                            wsi_bag=f["feats"]
+                            path_features.append(torch.Tensor(wsi_bag[()]))
+                            cluster_ids.extend(self.fname2ids[slide_id[:-4]+'.h5'])
+                            
                     path_features = torch.cat(path_features, dim=0)
                     cluster_ids = torch.Tensor(cluster_ids)
                     genomic_features = torch.tensor(self.genomic_features.iloc[idx])
@@ -275,10 +278,11 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                 elif self.mode == 'pathomic':
                     path_features = []
                     for slide_id in slide_ids:
-                        wsi_path = os.path.join(data_dir, 'pt_files', '{}.pt'.format(slide_id.rstrip('.svs')))
-                        wsi_bag = torch.load(wsi_path)
-                        path_features.append(wsi_bag)
-                    path_features = torch.cat(path_features, dim=0)
+                        wsi_path = os.path.join(data_dir, '{}.h5'.format(slide_id.rstrip('.svs')))
+                        with h5py.File(wsi_path, "r") as f:
+                            wsi_bag=f["feats"]
+                            path_features.append(torch.Tensor(wsi_bag[()]))
+                    path_features = reduce_path_features_randomly(path_features)
                     genomic_features = torch.tensor(self.genomic_features.iloc[idx])
                     return (path_features, genomic_features, label, event_time, c)
 
@@ -338,7 +342,7 @@ class Generic_Split(Generic_MIL_Survival_Dataset):
         self.signatures = signatures
 
         #with open(os.path.join(data_dir, 'fast_cluster_ids.pkl'), 'rb') as handle:
-        #    self.fname2ids = pickle.load(handle)
+        #   self.fname2ids = pickle.load(handle)
 
         def series_intersection(s1, s2):
             return pd.Series(list(set(s1) & set(s2)))

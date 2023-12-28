@@ -12,12 +12,12 @@ from models.model_utils import *
 
 class MCAT_Surv(nn.Module):
     def __init__(self, fusion='concat', omic_sizes=[100, 200, 300, 400, 500, 600], n_classes=4,
-                 model_size_wsi: str='small', model_size_omic: str='small', dropout=0.25):
+                 model_size_wsi: str='small', model_size_omic: str='small', dropout=0.25,feature_size=768):
         super(MCAT_Surv, self).__init__()
         self.fusion = fusion
         self.omic_sizes = omic_sizes
         self.n_classes = n_classes
-        self.size_dict_WSI = {"small": [768, 256, 256], "big": [768, 512, 384]}
+        self.size_dict_WSI = {"small": [feature_size, 256, 256], "big": [feature_size, 512, 384]}
         self.size_dict_omic = {'small': [256, 256], 'big': [1024, 1024, 1024, 256]}
         
         ### FC Layer over WSI bag

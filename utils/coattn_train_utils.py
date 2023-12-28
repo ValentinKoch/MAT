@@ -146,7 +146,7 @@ def summary_survival_coattn(model, loader, n_classes):
     slide_ids = loader.dataset.slide_data['slide_id']
     patient_results = {}
 
-    for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
+    for batch_idx, data_WSI, (data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6), label, event_time, c in enumerate(loader):
         
         data_WSI = data_WSI.to(device)
         data_omic1 = data_omic1.type(torch.FloatTensor).to(device)

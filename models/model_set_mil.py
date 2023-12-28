@@ -10,7 +10,7 @@ from models.model_utils import *
 ### Deep Sets Implementation ###
 ################################
 class MIL_Sum_FC_surv(nn.Module):
-    def __init__(self, omic_input_dim=None, fusion=None, size_arg = "small", dropout=0.25, n_classes=4):
+    def __init__(self, omic_input_dim=None, fusion=None, size_arg = "small", dropout=0.25, n_classes=4,feature_size=768):
         r"""
         Deep Sets Implementation.
 
@@ -23,7 +23,7 @@ class MIL_Sum_FC_surv(nn.Module):
         """
         super(MIL_Sum_FC_surv, self).__init__()
         self.fusion = fusion
-        self.size_dict_path = {"small": [1024, 512, 256], "big": [1024, 512, 384]}
+        self.size_dict_path = {"small": [feature_size, 512, 256], "big": [feature_size, 512, 384]}
         self.size_dict_omic = {'small': [256, 256]}
 
         ### Deep Sets Architecture Construction
@@ -92,7 +92,7 @@ class MIL_Sum_FC_surv(nn.Module):
 # Attention MIL Implementation #
 ################################
 class MIL_Attention_FC_surv(nn.Module):
-    def __init__(self, omic_input_dim=None, fusion=None, size_arg = "small", dropout=0.25, n_classes=4):
+    def __init__(self, omic_input_dim=None, fusion=None, size_arg = "small", dropout=0.25, n_classes=4,feature_size=768):
         r"""
         Attention MIL Implementation
 
@@ -105,7 +105,7 @@ class MIL_Attention_FC_surv(nn.Module):
         """
         super(MIL_Attention_FC_surv, self).__init__()
         self.fusion = fusion
-        self.size_dict_path = {"small": [1024, 512, 256], "big": [1024, 512, 384]}
+        self.size_dict_path = {"small": [feature_size, 512, 256], "big": [feature_size, 512, 384]}
         self.size_dict_omic = {'small': [256, 256]}
 
         ### Deep Sets Architecture Construction
@@ -181,7 +181,7 @@ class MIL_Attention_FC_surv(nn.Module):
 # Deep Attention MISL Implementation #
 ######################################
 class MIL_Cluster_FC_surv(nn.Module):
-    def __init__(self, omic_input_dim=None, fusion=None, num_clusters=10, size_arg = "small", dropout=0.25, n_classes=4):
+    def __init__(self, omic_input_dim=None, fusion=None, num_clusters=10, size_arg = "small", dropout=0.25, n_classes=4,feature_size=768):
         r"""
         Attention MIL Implementation
 
@@ -193,7 +193,7 @@ class MIL_Cluster_FC_surv(nn.Module):
             n_classes (int): Output shape of NN
         """
         super(MIL_Cluster_FC_surv, self).__init__()
-        self.size_dict_path = {"small": [1024, 512, 256], "big": [1024, 512, 384]}
+        self.size_dict_path = {"small": [feature_size, 512, 256], "big": [feature_size, 512, 384]}
         self.size_dict_omic = {'small': [256, 256]}
         self.num_clusters = num_clusters
         self.fusion = fusion

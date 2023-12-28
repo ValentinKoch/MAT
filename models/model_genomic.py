@@ -9,10 +9,10 @@ from models.model_utils import *
 #### Genomic FC Model ####
 ##########################
 class SNN(nn.Module):
-    def __init__(self, input_dim: int, model_size_omic: str='small', n_classes: int=4):
+    def __init__(self, input_dim: int, model_size_omic: str='small', n_classes: int=4,feature_size=768):
         super(MaxNet, self).__init__()
         self.n_classes = n_classes
-        self.size_dict_omic = {'small': [256, 256, 256, 256], 'big': [1024, 1024, 1024, 256]}
+        self.size_dict_omic = {'small': [256, 256, 256, 256], 'big': [feature_size, 1024, 1024, 256]}
         
         ### Constructing Genomic SNN
         hidden = self.size_dict_omic[model_size_omic]
