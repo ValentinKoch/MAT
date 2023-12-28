@@ -377,9 +377,9 @@ def get_custom_exp_code(args):
     param_code = ''
 
     ### Model Type
-    if args.model_type == 'max_net':
+    if args.model_type == 'snn':
       param_code += 'SNN'
-    if args.model_type == 'amil':
+    elif args.model_type == 'amil':
       param_code += 'AMIL'
     elif args.model_type == 'deepset':
       param_code += 'DS'

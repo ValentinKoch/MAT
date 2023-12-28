@@ -371,7 +371,7 @@ def eval2(datasets: tuple, cur: int, args: Namespace):
         else:
             model = MM_MIL_Attention_fc(**model_dict)
 
-    elif args.model_type =='max_net':
+    elif args.model_type =='snn':
         model_dict = {'input_dim': args.omic_input_dim, 'meta_dim': args.meta_dim, 'model_size_omic': args.model_size_omic, 'n_classes': args.n_classes}
         if args.task_type == 'survival':
             model = MaxNet(**model_dict)
