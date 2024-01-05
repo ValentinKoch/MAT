@@ -108,10 +108,10 @@ parser.add_argument('--log_data',        action='store_true', default=True, help
 parser.add_argument('--overwrite',     	 action='store_true', default=True, help='Whether or not to overwrite experiments (if already ran)')
 parser.add_argument('--sig_path',        type=str, default='/mnt/ceph_vol/MAT/dataset_csv_sig/signatures.csv')
 ### Model Parameters.
-parser.add_argument('--model_type',      type=str, choices=['snn', 'deepset', 'amil', 'mi_fcn', 'mcat',"'multi"], default='mcat', help='Type of model (Default: mcat)')
-parser.add_argument('--mode',            type=str, choices=['omic', 'path', 'pathomic', 'cluster', 'coattn'], default='coattn', help='Specifies which modalities to use / collate function in dataloader.')
-parser.add_argument('--fusion',          type=str, choices=['None', 'concat', 'bilinear'], default='None', help='Type of fusion. (Default: concat).')
-parser.add_argument('--apply_sig',		 action='store_true', default=False, help='Use genomic features as signature embeddings.')
+parser.add_argument('--model_type',      type=str, choices=['snn', 'deepset', 'amil', 'mi_fcn', 'mcat',"mdt"], default='mcat', help='Type of model (Default: mcat)')
+parser.add_argument('--mode',            type=str, choices=['omic', 'path', 'pathomic', 'cluster', 'coattn'], default='None', help='Specifies which modalities to use / collate function in dataloader.')
+parser.add_argument('--fusion',          type=str, choices=['None', 'concat', 'bilinear'], default='concat', help='Type of fusion. (Default: concat).')
+parser.add_argument('--apply_sig',		 action='store_true', default=True, help='Use genomic features as signature embeddings.')
 parser.add_argument('--apply_sigfeats',  action='store_true', default=False, help='Use genomic features as tabular features.')
 parser.add_argument('--drop_out',        action='store_true', default=True, help='Enable dropout (p=0.25)')
 parser.add_argument('--model_size_wsi',  type=str, default='small', help='Network size of AMIL model')
@@ -121,7 +121,7 @@ parser.add_argument('--model_size_omic', type=str, default='small', help='Networ
 parser.add_argument('--opt',             type=str, choices = ['adam','adamw', 'sgd'], default='adam')
 parser.add_argument('--batch_size',      type=int, default=1, help='Batch Size (Default: 1, due to varying bag sizes)')
 parser.add_argument('--gc',              type=int, default=32, help='Gradient Accumulation Step.')
-parser.add_argument('--max_epochs',      type=int, default=20, help='Maximum number of epochs to train (default: 20)')
+parser.add_argument('--max_epochs',      type=int, default=1, help='Maximum number of epochs to train (default: 20)')
 parser.add_argument('--lr',				 type=float, default=2e-4, help='Learning rate (default: 0.0001)')
 parser.add_argument('--bag_loss',        type=str, choices=['svm', 'ce', 'ce_surv', 'nll_surv', 'cox_surv'], default='nll_surv', help='slide-level classification loss function (default: ce)')
 parser.add_argument('--label_frac',      type=float, default=1.0, help='fraction of training labels (default: 1.0)')
@@ -190,6 +190,7 @@ if 'survival' in args.task:
 	else:
 		combined_study = study
 	study_dir = combined_study
+	mdt=args.model_type=="mdt"
 	dataset = Generic_MIL_Survival_Dataset(csv_path = './%s/%s_all_clean.csv' % (args.dataset_path, combined_study),
 										   sig_path=args.sig_path,
 										   mode = args.mode,
@@ -201,7 +202,8 @@ if 'survival' in args.task:
 										   patient_strat= False,
 										   n_bins=4,
 										   label_col = 'survival_months',
-										   ignore=[])
+										   ignore=[],
+										   mdt=mdt)
 else:
 	raise NotImplementedError
 

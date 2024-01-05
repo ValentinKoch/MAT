@@ -107,7 +107,7 @@ parser.add_argument('--overwrite',     	 action='store_true', default=False, hel
 parser.add_argument('--sig_path',        type=str, default='/mnt/ceph_vol/MAT/dataset_csv_sig/signatures.csv')
 
 ### Model Parameters.
-parser.add_argument('--model_type',      type=str, choices=['snn', 'deepset', 'amil', 'mi_fcn', 'mcat',"'multi"], default='mcat', help='Type of model (Default: mcat)')
+parser.add_argument('--model_type',      type=str, choices=['snn', 'deepset', 'amil', 'mi_fcn', 'mcat',"mdt"], default='mcat', help='Type of model (Default: mcat)')
 parser.add_argument('--mode',            type=str, choices=['omic', 'path', 'pathomic', 'cluster', 'coattn'], default='coattn', help='Specifies which modalities to use / collate function in dataloader.')
 parser.add_argument('--fusion',          type=str, choices=['None', 'concat', 'bilinear'], default='concat', help='Type of fusion. (Default: concat).')
 parser.add_argument('--apply_sig',		 action='store_true', default=True, help='Use genomic features as signature embeddings.')

@@ -158,7 +158,7 @@ def train(datasets: tuple, cur: int, args: Namespace):
     elif args.model_type == 'mcat':
         model_dict = {'fusion': args.fusion, 'omic_sizes': args.omic_sizes, 'n_classes': args.n_classes}
         model = MCAT_Surv(**model_dict)
-    elif args.model_type == 'multi':
+    elif args.model_type == 'mdt':
         model_dict = {'input_dims': [768]+args.omic_sizes, 'n_classes': args.n_classes}
         model = MultiTransformer(**model_dict)
     else:
@@ -204,7 +204,7 @@ def train(datasets: tuple, cur: int, args: Namespace):
     model.load_state_dict(torch.load(os.path.join(args.results_dir, "s_{}_checkpoint.pt".format(cur))))
     attentions=[]
     patch_risk=[]
-    if args.model_type == 'multi':
+    if args.model_type == 'mdt':
         results_val_dict, val_cindex,attentions,patch_risk = summary_survival_coattn_importance(model, val_loader) 
     elif args.model_type=="mcat":
         results_val_dict, val_cindex = summary_survival_coattn(model, val_loader, args.n_classes) #summary_survival_coattn_importance

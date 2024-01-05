@@ -387,8 +387,8 @@ def get_custom_exp_code(args):
       param_code += 'MIFCN'
     elif args.model_type == 'mcat':
       param_code += 'MCAT'
-    elif args.model_type == 'multi':
-      param_code += 'MTF'
+    elif args.model_type == 'mdt':
+      param_code += 'MDT'
     else:
       raise NotImplementedError
 
