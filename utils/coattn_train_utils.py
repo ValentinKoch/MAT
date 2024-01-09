@@ -134,7 +134,7 @@ def validate_survival_coattn(cur, epoch, model, loader, n_classes, early_stoppin
     return False
 
 
-def summary_survival_coattn(model, loader, n_classes):
+def x(model, loader, n_classes):
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.eval()
     test_loss = 0.

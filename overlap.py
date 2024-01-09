@@ -35,6 +35,40 @@ def overlay_colormap_on_rgb(rgb_image, heatmap_image, image_name,save_path,high_
         #overlaid_image.save(Path(save_path)/image_name.replace(".npy",".png"))
     return pil_rgb_image
 
+def scale_negatives(arr):
+    # Make a copy to avoid modifying the original array
+    result = arr.copy()
+
+    # Identify negative values
+    negative_values = arr < 0
+
+    # Scale negative values to the range 0-1
+    min_val = arr[negative_values].min()
+    max_val = arr[negative_values].max()
+    
+    # Avoid division by zero if all negative values are the same
+    if min_val != max_val:
+        result[negative_values] = 1-(arr[negative_values] - min_val) / (max_val - min_val)
+    
+    return result
+
+def scale_positives(arr):
+    # Make a copy to avoid modifying the original array
+    result = arr.copy()
+
+    # Identify negative values
+    positive_values = arr > 0
+
+    # Scale negative values to the range 0-1
+    min_val = arr[positive_values].min()
+    max_val = arr[positive_values].max()
+    
+    # Avoid division by zero if all negative values are the same
+    if min_val != max_val:
+        result[positive_values] = (arr[positive_values] - min_val) / (max_val - min_val)
+    
+    return result
+
 def map_risk_score(image_id,attention_values,feature_dir="/mnt/ceph_vol/UCEC/features",feature_size=256,orig_downscale=4):
     file= sorted(Path(feature_dir).glob(f"*{image_id}*.h5"))[0]
     all_ims=[]
@@ -78,6 +112,7 @@ def map_attentions(image_id,attention_values,feature_dir="/mnt/ceph_vol/UCEC/fea
             for coord,attention in zip(filtered_coords,attention_values[all_coord_len:all_coord_len+c_l]):
                 y,x=int(coord[1]),int(coord[2])
                 im[x:x+feature_size,y:y+feature_size]=attention
+            im=scale_positives(im)
             all_coord_len+=c_l
             all_ims.append(im/np.nanmax(np.abs(im)))
     return all_ims
@@ -90,7 +125,8 @@ if __name__=="__main__":
 
     for dataset in dataset_list:
         done=[]
-        attention_folder="results/5foldcv/MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat/tcga_"+dataset+"_MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat_s1/bottom_attention"
+        attention_folder="/mnt/ceph_vol/MAT/results/5foldcv/MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat/tcga_"+dataset+"_MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat_s1/bottom_attention"
+        risk_folder="/mnt/ceph_vol/MAT/results/5foldcv/MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat/tcga_"+dataset+"_MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat_s1/patch_risk"
         dataset_save_folder=save_folder/dataset
         dataset_save_folder.mkdir(parents=True, exist_ok=True)
 
@@ -98,13 +134,26 @@ if __name__=="__main__":
         attention_files=sorted(Path(attention_folder).glob("*.npy"))
 
         for attention_file in tqdm.tqdm(attention_files):
+            
             image_id=attention_file.name.replace(".npy","")
+            risk_values=risk_folder+"/"+attention_file.name
             attention_values=np.load(attention_file)
-            attentions_mapped=map_attentions(image_id,attention_values)
-            previews=sorted(Path(dataset_preview_folder).glob(f"*{image_id}*.png"))
-            for attention_mapped,preview in zip(attentions_mapped,previews):
-                prev_im=np.array(Image.open(preview))
-                overlay_colormap_on_rgb(prev_im,attention_mapped,image_id,save_folder,None)
-            print(attention_file.name)
 
+            risk_values=np.load(risk_values)
+            attentions_mapped=map_attentions(image_id,attention_values)
+            risks_mapped=map_risk_score(image_id,risk_values)
+
+            previews=sorted(Path(dataset_preview_folder).glob(f"*{image_id}*.png"))
+
+            for risk_mapped,attention_mapped,preview in zip(risks_mapped,attentions_mapped,previews):
+                prev_im=np.array(Image.open(preview))
+                joint=np.multiply(risk_mapped,attention_mapped)
+                joint=joint/np.max(joint)
+                attention_mapped=attention_mapped/np.max(attention_mapped)
+                
+                overlay_colormap_on_rgb(prev_im,attention_mapped,image_id+'sc',save_folder,None)
+                #overlay_colormap_on_rgb(prev_im,risk_mapped,image_id+"_risk",save_folder,None)
+                overlay_colormap_on_rgb(prev_im,joint,image_id+"_joint",save_folder,None)
+            print(attention_file.name)
+    
 
