@@ -202,8 +202,7 @@ if 'survival' in args.task:
 										   patient_strat= False,
 										   n_bins=4,
 										   label_col = 'survival_months',
-										   ignore=[],
-										   mdt=mdt)
+										   ignore=[])
 else:
 	raise NotImplementedError
 
