@@ -180,7 +180,7 @@ class Generic_WSI_Survival_Dataset(Dataset):
         if len(split) > 0:
             mask = self.slide_data['slide_id'].isin(split.tolist())
             df_slice = self.slide_data[mask].reset_index(drop=True)
-            split = Generic_Split(df_slice, metadata=self.metadata, mode=self.mode, signatures=self.signatures, data_dir=self.data_dir, label_col=self.label_col, patient_dict=self.patient_dict, num_classes=self.num_classes)
+            split = Generic_Split(df_slice, split_key=split_key,metadata=self.metadata, mode=self.mode, signatures=self.signatures, data_dir=self.data_dir, label_col=self.label_col, patient_dict=self.patient_dict, num_classes=self.num_classes)
         else:
             split = None
         
@@ -220,7 +220,7 @@ class Generic_WSI_Survival_Dataset(Dataset):
         return None
 
     
-def reduce_path_features_randomly(path_features, n=20000):
+def reduce_path_features_randomly(path_features, n=10000):
     # Concatenate the path features along dimension 0
 
     
@@ -234,11 +234,12 @@ def reduce_path_features_randomly(path_features, n=20000):
         return path_features
     
 class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
-    def __init__(self, data_dir,mode: str='omic', **kwargs):
+    def __init__(self, data_dir,mode: str='omic',split_key="train", **kwargs):
         super(Generic_MIL_Survival_Dataset, self).__init__(**kwargs)
         self.data_dir = data_dir
         self.mode = mode
         self.use_h5 = False
+        self.split_key=split_key
   
 
     def load_from_h5(self, toggle):
@@ -311,7 +312,9 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                             path_features.append(torch.Tensor(wsi_bag[()]))
 
                     path_features = torch.cat(path_features, dim=0)
-                    path_features = reduce_path_features_randomly(path_features)
+                    if self.split_key!="train":
+                        path_features = reduce_path_features_randomly(path_features,50000)
+                    path_features = reduce_path_features_randomly(path_features,10000)
                     omic1 = torch.tensor(self.genomic_features[self.omic_names[0]].iloc[idx].values)
                     omic2 = torch.tensor(self.genomic_features[self.omic_names[1]].iloc[idx].values)
                     omic3 = torch.tensor(self.genomic_features[self.omic_names[2]].iloc[idx].values)
@@ -348,7 +351,7 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
 
 
 class Generic_Split(Generic_MIL_Survival_Dataset):
-    def __init__(self, slide_data, metadata, mode,signatures=None, data_dir=None, label_col=None, patient_dict=None, num_classes=2):
+    def __init__(self, slide_data, metadata, mode,split_key,validation=False,signatures=None, data_dir=None, label_col=None, patient_dict=None, num_classes=2):
         self.use_h5 = False
         self.slide_data = slide_data
         self.metadata = metadata
@@ -358,6 +361,7 @@ class Generic_Split(Generic_MIL_Survival_Dataset):
         self.label_col = label_col
         self.patient_dict = patient_dict
         self.slide_cls_ids = [[] for i in range(self.num_classes)]
+        self.split_key=split_key
 
         for i in range(self.num_classes):
             self.slide_cls_ids[i] = np.where(self.slide_data['label'] == i)[0]
