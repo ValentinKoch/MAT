@@ -57,7 +57,7 @@ def main(args):
 		if 'omic' in args.mode or args.mode == 'cluster' or args.mode == 'graph' or args.mode == 'pyramid':
 			args.omic_input_dim = train_dataset.genomic_features.shape[1]
 			print("Genomic Dimension", args.omic_input_dim)
-		elif 'coattn' in args.mode:
+		elif 'coattn' in args.mode or "mdt" in args.mode:
 			args.omic_sizes = train_dataset.omic_sizes
 			print('Genomic Dimensions', args.omic_sizes)
 		else:
@@ -108,9 +108,9 @@ parser.add_argument('--log_data',        action='store_true', default=True, help
 parser.add_argument('--overwrite',     	 action='store_true', default=True, help='Whether or not to overwrite experiments (if already ran)')
 parser.add_argument('--sig_path',        type=str, default='/mnt/ceph_vol/MAT/dataset_csv_sig/signatures.csv')
 ### Model Parameters.
-parser.add_argument('--model_type',      type=str, choices=['snn', 'deepset', 'amil', 'mi_fcn', 'mcat',"mdt"], default='mcat', help='Type of model (Default: mcat)')
-parser.add_argument('--mode',            type=str, choices=['omic', 'path', 'pathomic', 'cluster', 'coattn'], default='None', help='Specifies which modalities to use / collate function in dataloader.')
-parser.add_argument('--fusion',          type=str, choices=['None', 'concat', 'bilinear'], default='concat', help='Type of fusion. (Default: concat).')
+parser.add_argument('--model_type',      type=str, choices=['snn', 'deepset', 'amil', 'mi_fcn', 'mcat',"mdt"], default='mdt', help='Type of model (Default: mcat)')
+parser.add_argument('--mode',            type=str, choices=['omic', 'path', 'pathomic', 'cluster', 'coattn',"mdt"], default='mdt', help='Specifies which modalities to use / collate function in dataloader.')
+parser.add_argument('--fusion',          type=str, choices=['None', 'concat', 'bilinear'], default='None', help='Type of fusion. (Default: concat).')
 parser.add_argument('--apply_sig',		 action='store_true', default=False, help='Use genomic features as signature embeddings.')
 parser.add_argument('--apply_sigfeats',  action='store_true', default=False, help='Use genomic features as tabular features.')
 parser.add_argument('--drop_out',        action='store_true', default=True, help='Enable dropout (p=0.25)')

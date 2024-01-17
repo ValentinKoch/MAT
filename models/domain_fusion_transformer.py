@@ -103,19 +103,7 @@ class Transformer(nn.Module):
              x=self.mlp_head(x)
 
         return x.unsqueeze(0)
-    
-def reduce_path_features_randomly(path_features, n=10000):
-    # Concatenate the path features along dimension 0
 
-    
-    if path_features.shape[0]>n:
-        # Create a random permutation of indices
-        indices = torch.randperm(path_features.size(0))
-        # Select the first n features based on the random indices
-        return path_features[indices[:n]]
-    
-    else:
-        return path_features
     
 class MultiTransformer(nn.Module):
     def __init__(
@@ -161,7 +149,6 @@ class MultiTransformer(nn.Module):
         x_agg = [] 
         cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
         if not self.test_mode:
-            x_path=reduce_path_features_randomly(x_path)
             dropout_list= generate_dropout_list(x,self.stain_dropout)
             dropout_list[0]=True
         else:

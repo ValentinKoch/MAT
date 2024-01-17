@@ -10,7 +10,6 @@ import tqdm
 def get_high_attention_patch(attention_map,slide_folder,image_name,save_path):
     return 
 
-
 def overlay_colormap_on_rgb(rgb_image, heatmap_image, image_name,save_path,high_att_coord, cmap='viridis', alpha=0.4):
 
     alpha_channel = np.ones((rgb_image.shape[0], rgb_image.shape[1]), dtype=np.uint8) * 255
@@ -29,6 +28,7 @@ def overlay_colormap_on_rgb(rgb_image, heatmap_image, image_name,save_path,high_
     overlaid_image = np.where(resized_binary_mask_expanded, overlaid_image, zero_array)
     overlaid_image[:,:,3]=255
     overlaid_image=Image.fromarray(overlaid_image,mode='RGBA')
+
     if save_path is not None:
         overlaid_image.save(Path(save_path)/(image_name+".png"))
         resized_heatmap.save(Path(save_path)/(image_name+"_heat.png"))
@@ -69,7 +69,7 @@ def scale_positives(arr):
     
     return result
 
-def map_risk_score(image_id,attention_values,feature_dir="/mnt/ceph_vol/UCEC/features",feature_size=256,orig_downscale=4):
+def map_risk_score(image_id,attention_values,previews,feature_dir="/mnt/ceph_vol/MAT/feats",feature_size=256,orig_downscale=4):
     file= sorted(Path(feature_dir).glob(f"*{image_id}*.h5"))[0]
     all_ims=[]
     with h5py.File(file, 'r') as h5_file:
@@ -80,9 +80,13 @@ def map_risk_score(image_id,attention_values,feature_dir="/mnt/ceph_vol/UCEC/fea
         all_coord_len=0
         scenes=list(np.unique([int(c[0]) for c in coords]))
         for i in scenes:
+            prev_im=np.array(Image.open(previews[i]))
+            scale=get_scaling(prev_im,slide_sizes[i])
             filtered_coords=[c for c in list(coords) if c[0]==i]
             c_l=len(filtered_coords)
-            im=np.zeros(np.uint64(slide_sizes[i]/orig_downscale))
+            width=np.uint64(prev_im.shape[1]*scale/orig_downscale)
+            length=np.uint64(prev_im.shape[0]*scale/orig_downscale)
+            im=np.zeros((width,length))
             for coord,attention in zip(filtered_coords,attention_values[all_coord_len:all_coord_len+c_l]):
                 y,x=int(coord[1]),int(coord[2])
                 im[x:x+feature_size,y:y+feature_size]=attention
@@ -92,8 +96,13 @@ def map_risk_score(image_id,attention_values,feature_dir="/mnt/ceph_vol/UCEC/fea
             #all_ims.append(im/np.nanmax(np.abs(im)))
     return all_ims
 
+def get_scaling(prev_im,slide_size):
+    factor_a=slide_size[1]/prev_im.shape[0]
+    factor_b=slide_size[0]/prev_im.shape[1]
+    scaling=np.average([factor_a,factor_b])
+    return scaling 
 
-def map_attentions(image_id,attention_values,feature_dir="/mnt/ceph_vol/UCEC/features",feature_size=256,orig_downscale=4):
+def map_attentions(image_id,attention_values,previews,feature_dir="/mnt/ceph_vol/MAT/feats",feature_size=256,orig_downscale=2):
     file= sorted(Path(feature_dir).glob(f"*{image_id}*.h5"))[0]
     all_ims=[]
     with h5py.File(file, 'r') as h5_file:
@@ -101,15 +110,21 @@ def map_attentions(image_id,attention_values,feature_dir="/mnt/ceph_vol/UCEC/fea
         # Change 'dataset_name' to the actual name of your dataset # Adjust this if necessary
         coords,slide_sizes = h5_file["coords"],h5_file["slide_sizes"]
         # Return the first entry in the dataset
+        print(coords.shape)
         all_coord_len=0
         scenes=sorted(np.unique([int(c[0]) for c in coords]))
         for i in scenes:
+            prev_im=np.array(Image.open(previews[i]))
+            scale=get_scaling(prev_im,slide_sizes[i])
             filtered_coords=[c for c in list(coords) if c[0]==i]
             c_l=len(filtered_coords)
-            im=np.zeros(np.uint64(slide_sizes[i]/orig_downscale))
+            width=np.uint64(prev_im.shape[1]*scale/orig_downscale)
+            length=np.uint64(prev_im.shape[0]*scale/orig_downscale)
+            im=np.zeros((width,length))
+            #im=np.zeros(np.uint64(slide_sizes[i]/orig_downscale))
             if attention_values.shape[0]==4:
                 attention_values=np.average(attention_values,axis=0)
-            for coord,attention in zip(filtered_coords,attention_values[all_coord_len:all_coord_len+c_l]):
+            for i,(coord,attention) in enumerate(zip(filtered_coords,attention_values[all_coord_len:all_coord_len+c_l])):
                 y,x=int(coord[1]),int(coord[2])
                 im[x:x+feature_size,y:y+feature_size]=attention
             im=scale_positives(im)
@@ -121,29 +136,31 @@ def map_attentions(image_id,attention_values,feature_dir="/mnt/ceph_vol/UCEC/fea
 if __name__=="__main__":
     dataset_list=["ucec","brca","blca","gbmlgg","luad"]
     save_folder=Path("/mnt/ceph_vol/surv_attention")
-    preview_dir="/mnt/ceph_vol/"
-
+    #preview_dir="/mnt/ceph_vol/"
+    preview_dir="/mnt/ceph_vol/MAT/prev"
+    orig_downscale=2
     for dataset in dataset_list:
         done=[]
-        attention_folder="/mnt/ceph_vol/MAT/results/5foldcv/MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat/tcga_"+dataset+"_MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat_s1/bottom_attention"
-        risk_folder="/mnt/ceph_vol/MAT/results/5foldcv/MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat/tcga_"+dataset+"_MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat_s1/patch_risk"
+        #attention_folder="/mnt/ceph_vol/MAT/results/5foldcv/MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat/tcga_"+dataset+"_MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat_s1/bottom_attention"
+        #risk_folder="/mnt/ceph_vol/MAT/results/5foldcv/MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat/tcga_"+dataset+"_MTF_nll_surv_a0.0_lr2e-05_5foldcv_gc16_concat_s1/patch_risk"
+        attention_folder="/mnt/ceph_vol/MAT/att"
+        risk_folder="/mnt/ceph_vol/MAT/risk"
         dataset_save_folder=save_folder/dataset
         dataset_save_folder.mkdir(parents=True, exist_ok=True)
 
-        dataset_preview_folder=preview_dir+dataset.upper()+"/preview"
+        dataset_preview_folder="/mnt/ceph_vol/MAT/prev"#preview_dir+dataset.upper()+"/preview"
         attention_files=sorted(Path(attention_folder).glob("*.npy"))
-
+        
         for attention_file in tqdm.tqdm(attention_files):
             
             image_id=attention_file.name.replace(".npy","")
+            previews=sorted(Path(dataset_preview_folder).glob(f"*{image_id}*.png"))
             risk_values=risk_folder+"/"+attention_file.name
             attention_values=np.load(attention_file)
 
             risk_values=np.load(risk_values)
-            attentions_mapped=map_attentions(image_id,attention_values)
-            risks_mapped=map_risk_score(image_id,risk_values)
-
-            previews=sorted(Path(dataset_preview_folder).glob(f"*{image_id}*.png"))
+            attentions_mapped=map_attentions(image_id,attention_values,previews,orig_downscale=orig_downscale)
+            risks_mapped=map_risk_score(image_id,risk_values,previews,orig_downscale=orig_downscale)
 
             for risk_mapped,attention_mapped,preview in zip(risks_mapped,attentions_mapped,previews):
                 prev_im=np.array(Image.open(preview))
@@ -151,9 +168,10 @@ if __name__=="__main__":
                 joint=joint/np.max(joint)
                 attention_mapped=attention_mapped/np.max(attention_mapped)
                 
-                overlay_colormap_on_rgb(prev_im,attention_mapped,image_id+'sc',save_folder,None)
-                #overlay_colormap_on_rgb(prev_im,risk_mapped,image_id+"_risk",save_folder,None)
-                overlay_colormap_on_rgb(prev_im,joint,image_id+"_joint",save_folder,None)
+                overlay_colormap_on_rgb(prev_im,attention_mapped,image_id+'sc',dataset_save_folder,None)
+                overlay_colormap_on_rgb(prev_im,risk_mapped,image_id+"_risk",dataset_save_folder,None)
+                overlay_colormap_on_rgb(prev_im,joint,image_id+"_joint",dataset_save_folder,None)
+
             print(attention_file.name)
     
 

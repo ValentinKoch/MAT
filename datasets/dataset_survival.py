@@ -219,7 +219,20 @@ class Generic_WSI_Survival_Dataset(Dataset):
     def __getitem__(self, idx):
         return None
 
+    
+def reduce_path_features_randomly(path_features, n=20000):
+    # Concatenate the path features along dimension 0
 
+    
+    if path_features.shape[0]>n:
+        # Create a random permutation of indices
+        indices = torch.randperm(path_features.size(0))
+        # Select the first n features based on the random indices
+        return path_features[indices[:n]]
+    
+    else:
+        return path_features
+    
 class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
     def __init__(self, data_dir,mode: str='omic', **kwargs):
         super(Generic_MIL_Survival_Dataset, self).__init__(**kwargs)
@@ -283,11 +296,30 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                         with h5py.File(wsi_path, "r") as f:
                             wsi_bag=f["feats"]
                             path_features.append(torch.Tensor(wsi_bag[()]))
+
                     #path_features = reduce_path_features_randomly(path_features)
                     path_features = torch.cat(path_features, dim=0)
                     genomic_features = torch.tensor(self.genomic_features.iloc[idx])
                     return (path_features, genomic_features, label, event_time, c)
+                
+                elif self.mode == 'mdt':
+                    path_features = []
+                    for slide_id in slide_ids:
+                        wsi_path = os.path.join(data_dir, '{}.h5'.format(slide_id.rstrip('.svs')))
+                        with h5py.File(wsi_path, "r") as f:
+                            wsi_bag=f["feats"]
+                            path_features.append(torch.Tensor(wsi_bag[()]))
 
+                    path_features = torch.cat(path_features, dim=0)
+                    path_features = reduce_path_features_randomly(path_features)
+                    omic1 = torch.tensor(self.genomic_features[self.omic_names[0]].iloc[idx].values)
+                    omic2 = torch.tensor(self.genomic_features[self.omic_names[1]].iloc[idx].values)
+                    omic3 = torch.tensor(self.genomic_features[self.omic_names[2]].iloc[idx].values)
+                    omic4 = torch.tensor(self.genomic_features[self.omic_names[3]].iloc[idx].values)
+                    omic5 = torch.tensor(self.genomic_features[self.omic_names[4]].iloc[idx].values)
+                    omic6 = torch.tensor(self.genomic_features[self.omic_names[5]].iloc[idx].values)
+
+                    return (path_features, omic1, omic2, omic3, omic4, omic5, omic6, label, event_time, c)
                 elif self.mode == 'coattn':
                     path_features = []
                     for slide_id in slide_ids:

@@ -193,7 +193,7 @@ def train(datasets: tuple, cur: int, args: Namespace):
 
     for epoch in range(args.max_epochs):
         if args.task_type == 'survival':
-            if args.mode == 'coattn':
+            if args.mode == 'coattn' or "mdt" in args.mode:
                 train_loop_survival_coattn(epoch, model, train_loader, optimizer, args.n_classes, writer, loss_fn, reg_fn, args.lambda_reg, args.gc)
                 stop = validate_survival_coattn(cur, epoch, model, val_loader, args.n_classes, early_stopping, monitor_cindex, writer, loss_fn, reg_fn, args.lambda_reg, args.results_dir)
             else:

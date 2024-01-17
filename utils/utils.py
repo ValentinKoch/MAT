@@ -87,7 +87,7 @@ def get_split_loader(split_dataset, training = False, testing = False, weighted 
     """
         return either the validation loader or training loader 
     """
-    if mode == 'coattn':
+    if mode == 'coattn' or "mdt" in mode:
         collate = collate_MIL_survival_sig
     elif mode == 'cluster':
         collate = collate_MIL_survival_cluster
