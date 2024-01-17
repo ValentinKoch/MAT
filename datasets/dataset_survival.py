@@ -313,7 +313,10 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
 
                     path_features = torch.cat(path_features, dim=0)
                     if self.split_key!="train":
+                        print("in val mode")
                         path_features = reduce_path_features_randomly(path_features,50000)
+                    else:
+                        print("in val mode")
                     path_features = reduce_path_features_randomly(path_features,10000)
                     omic1 = torch.tensor(self.genomic_features[self.omic_names[0]].iloc[idx].values)
                     omic2 = torch.tensor(self.genomic_features[self.omic_names[1]].iloc[idx].values)
@@ -323,6 +326,7 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                     omic6 = torch.tensor(self.genomic_features[self.omic_names[5]].iloc[idx].values)
 
                     return (path_features, omic1, omic2, omic3, omic4, omic5, omic6, label, event_time, c)
+                
                 elif self.mode == 'coattn':
                     path_features = []
                     for slide_id in slide_ids:
