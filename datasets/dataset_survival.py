@@ -314,7 +314,7 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
                     path_features = torch.cat(path_features, dim=0)
                     if self.split_key!="train":
                         print("in val mode")
-                        path_features = reduce_path_features_randomly(path_features,50000)
+                        path_features = reduce_path_features_randomly(path_features,25000)
                     else:
                         print("in val mode")
                         path_features = reduce_path_features_randomly(path_features,10000)
