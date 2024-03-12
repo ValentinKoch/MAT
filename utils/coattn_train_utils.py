@@ -82,19 +82,16 @@ def validate_survival_coattn(cur, epoch, model, loader, n_classes, early_stoppin
     all_event_times = np.zeros((len(loader)))
 
     for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
-
-        data_WSI = data_WSI.to(device)
-        data_omic1 = data_omic1.type(torch.FloatTensor).to(device)
-        data_omic2 = data_omic2.type(torch.FloatTensor).to(device)
-        data_omic3 = data_omic3.type(torch.FloatTensor).to(device)
-        data_omic4 = data_omic4.type(torch.FloatTensor).to(device)
-        data_omic5 = data_omic5.type(torch.FloatTensor).to(device)
-        data_omic6 = data_omic6.type(torch.FloatTensor).to(device)
-        label = label.type(torch.LongTensor).to(device)
-        c = c.type(torch.FloatTensor).to(device)
-
         with torch.no_grad():
-            
+            data_WSI = data_WSI.to(device)
+            data_omic1 = data_omic1.type(torch.FloatTensor).to(device)
+            data_omic2 = data_omic2.type(torch.FloatTensor).to(device)
+            data_omic3 = data_omic3.type(torch.FloatTensor).to(device)
+            data_omic4 = data_omic4.type(torch.FloatTensor).to(device)
+            data_omic5 = data_omic5.type(torch.FloatTensor).to(device)
+            data_omic6 = data_omic6.type(torch.FloatTensor).to(device)
+            label = label.type(torch.LongTensor).to(device)
+            c = c.type(torch.FloatTensor).to(device)
             hazards, S, Y_hat, A = model(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6) # return hazards, S, Y_hat, A_raw, results_dict
 
         loss = loss_fn(hazards=hazards, S=S, Y=label, c=c, alpha=0)
@@ -188,86 +185,92 @@ def summary_survival_coattn_importance(model, loader):
     patient_results = {}
     c_indeces=[]
     all_attentions=[]
-    for i in range(8):
-        print(i, " of ", 7)
-        for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
-            data_WSI = data_WSI.to(device)
+    with torch.no_grad():
+        for i in range(8):
+            print(i, " of ", 7)
+            for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
+                try:
+                    data_WSI = data_WSI.to(device)
 
-            data_omic1 = data_omic1.type(torch.FloatTensor).to(device)
-            data_omic2 = data_omic2.type(torch.FloatTensor).to(device)
-            data_omic3 = data_omic3.type(torch.FloatTensor).to(device)
-            data_omic4 = data_omic4.type(torch.FloatTensor).to(device)
-            data_omic5 = data_omic5.type(torch.FloatTensor).to(device)
-            data_omic6 = data_omic6.type(torch.FloatTensor).to(device)
-            label = label.type(torch.LongTensor).to(device)
-            c = c.type(torch.FloatTensor).to(device)
-            slide_id = slide_ids.iloc[batch_idx]
-            
-            if i==0: data_WSI=None
-            if i==1: data_omic1=None
-            if i==2: data_omic2=None
-            if i==3: data_omic3=None
-            if i==4: data_omic4=None
-            if i==5: data_omic5=None
-            if i==6: data_omic6=None
-
-            with torch.no_grad():
-                hazards, survival, Y_hat, A  = model(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6) # return hazards, S, Y_hat, A_raw, results_dict
-                if i==7:
-                    bottom_attention,top_attention=model.attention_rollout(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6)
-                    all_attentions.append((slide_id,bottom_attention,top_attention))
+                    data_omic1 = data_omic1.type(torch.FloatTensor).to(device)
+                    data_omic2 = data_omic2.type(torch.FloatTensor).to(device)
+                    data_omic3 = data_omic3.type(torch.FloatTensor).to(device)
+                    data_omic4 = data_omic4.type(torch.FloatTensor).to(device)
+                    data_omic5 = data_omic5.type(torch.FloatTensor).to(device)
+                    data_omic6 = data_omic6.type(torch.FloatTensor).to(device)
+                    label = label.type(torch.LongTensor).to(device)
+                    c = c.type(torch.FloatTensor).to(device)
+                    slide_id = slide_ids.iloc[batch_idx]
                     
-            risk = (-torch.sum(survival, dim=1).cpu().numpy()).item()
-            event_time = event_time.item()
-            c = c.item()
-            all_risk_scores[batch_idx] = risk
-            all_censorships[batch_idx] = c
-            all_event_times[batch_idx] = event_time
-            patient_results.update({slide_id: {'slide_id': np.array(slide_id), 'risk': risk, 'disc_label': label.item(), 'survival': event_time, 'censorship': c}})
+                    if i==0: data_WSI=None
+                    if i==1: data_omic1=None
+                    if i==2: data_omic2=None
+                    if i==3: data_omic3=None
+                    if i==4: data_omic4=None
+                    if i==5: data_omic5=None
+                    if i==6: data_omic6=None
 
-        c_index = concordance_index_censored((1-all_censorships).astype(bool), all_event_times, all_risk_scores, tied_tol=1e-08)[0]
-        c_indeces.append(c_index)
+                    
+                    hazards, survival, Y_hat, A  = model(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6) # return hazards, S, Y_hat, A_raw, results_dict
+                    risk = (-torch.sum(survival, dim=1).cpu().numpy()).item()
+                    event_time = event_time.item()
+                    if i==7:
+                        
+                            bottom_attention,top_attention=model.attention_rollout(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6)
+                            all_attentions.append((slide_id,bottom_attention,top_attention))
+                                            
+                    
+                    
+                    c = c.item()
+                    all_risk_scores[batch_idx] = risk
+                    all_censorships[batch_idx] = c
+                    all_event_times[batch_idx] = event_time
+                    patient_results.update({slide_id: {'slide_id': np.array(slide_id), 'risk': risk, 'disc_label': label.item(), 'survival': event_time, 'censorship': c}})
+                except Exception as e:
+                        print(e)   
+            c_index = concordance_index_censored((1-all_censorships).astype(bool), all_event_times, all_risk_scores, tied_tol=1e-08)[0]
+            c_indeces.append(c_index)
 
 
-    for i in range(7):
-        print(i, " of ", 7)
-        for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
+        for i in range(7):
+            print(i, " of ", 7)
+            for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
 
-            if i==0: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6=data_WSI.to(device), None,None,None,None,None,None
-            if i==1: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,data_omic1.type(torch.FloatTensor).to(device),None,None,None,None,None
-            if i==2: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,data_omic2.type(torch.FloatTensor).to(device),None,None,None,None
-            if i==3: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,data_omic3.type(torch.FloatTensor).to(device),None,None,None
-            if i==4: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,data_omic4.type(torch.FloatTensor).to(device),None,None
-            if i==5: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,None,data_omic5.type(torch.FloatTensor).to(device),None
-            if i==6: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,None,None,data_omic6.type(torch.FloatTensor).to(device)
-            label = label.type(torch.LongTensor).to(device)
+                if i==0: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6=data_WSI.to(device), None,None,None,None,None,None
+                if i==1: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,data_omic1.type(torch.FloatTensor).to(device),None,None,None,None,None
+                if i==2: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,data_omic2.type(torch.FloatTensor).to(device),None,None,None,None
+                if i==3: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,data_omic3.type(torch.FloatTensor).to(device),None,None,None
+                if i==4: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,data_omic4.type(torch.FloatTensor).to(device),None,None
+                if i==5: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,None,data_omic5.type(torch.FloatTensor).to(device),None
+                if i==6: data_WSI,data_omic1,data_omic2,data_omic3,data_omic4,data_omic5,data_omic6= None,None,None,None,None,None,data_omic6.type(torch.FloatTensor).to(device)
+                label = label.type(torch.LongTensor).to(device)
 
-            c = c.type(torch.FloatTensor).to(device)
-            slide_id = slide_ids.iloc[batch_idx]
+                c = c.type(torch.FloatTensor).to(device)
+                slide_id = slide_ids.iloc[batch_idx]
 
-            with torch.no_grad():
+
                 hazards, survival, Y_hat, A  = model(x_path=data_WSI, x_omic1=data_omic1, x_omic2=data_omic2, x_omic3=data_omic3, x_omic4=data_omic4, x_omic5=data_omic5, x_omic6=data_omic6) # return hazards, S, Y_hat, A_raw, results_dict
 
-            risk = (-torch.sum(survival, dim=1).cpu().numpy()).item()
-            event_time = event_time.item()
-            c = c.item()
-            all_risk_scores[batch_idx] = risk
-            all_censorships[batch_idx] = c
-            all_event_times[batch_idx] = event_time
-            patient_results.update({slide_id: {'slide_id': np.array(slide_id), 'risk': risk, 'disc_label': label.item(), 'survival': event_time, 'censorship': c}})
-
-        c_index = concordance_index_censored((1-all_censorships).astype(bool), all_event_times, all_risk_scores, tied_tol=1e-08)[0]
-        c_indeces.append(c_index)
-
-
-    patch_risks=[]
-    for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
-        patch_risk=[]
-        for patch_feature in data_WSI:
-            with torch.no_grad():
-                hazards, survival, Y_hat, A  = model(x_path=patch_feature.unsqueeze(0).to(device), x_omic1=None, x_omic2=None, x_omic3=None, x_omic4=None, x_omic5=None, x_omic6=None)
                 risk = (-torch.sum(survival, dim=1).cpu().numpy()).item()
-                patch_risk.append(risk)
-        patch_risks.append((slide_ids.iloc[batch_idx],patch_risk))
+                event_time = event_time.item()
+                c = c.item()
+                all_risk_scores[batch_idx] = risk
+                all_censorships[batch_idx] = c
+                all_event_times[batch_idx] = event_time
+                patient_results.update({slide_id: {'slide_id': np.array(slide_id), 'risk': risk, 'disc_label': label.item(), 'survival': event_time, 'censorship': c}})
+
+            c_index = concordance_index_censored((1-all_censorships).astype(bool), all_event_times, all_risk_scores, tied_tol=1e-08)[0]
+            c_indeces.append(c_index)
+
+
+        patch_risks=[]
+        for batch_idx, (data_WSI, data_omic1, data_omic2, data_omic3, data_omic4, data_omic5, data_omic6, label, event_time, c) in enumerate(loader):
+            patch_risk=[]
+            for patch_feature in data_WSI:
+                with torch.no_grad():
+                    hazards, survival, Y_hat, A  = model(x_path=patch_feature.unsqueeze(0).to(device), x_omic1=None, x_omic2=None, x_omic3=None, x_omic4=None, x_omic5=None, x_omic6=None)
+                    risk = (-torch.sum(survival, dim=1).cpu().numpy()).item()
+                    patch_risk.append(risk)
+            patch_risks.append((slide_ids.iloc[batch_idx],patch_risk))
 
     return patient_results, c_indeces,all_attentions,patch_risks
