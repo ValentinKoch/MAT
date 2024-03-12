@@ -313,12 +313,12 @@ class Generic_MIL_Survival_Dataset(Generic_WSI_Survival_Dataset):
 
                     path_features = torch.cat(path_features, dim=0)
                     if self.split_key!="train":
-                        print("in val mode")
+                        #print("in val mode")
                         path_features = reduce_path_features_randomly(path_features,25000)
                     else:
-                        print("in train mode")
+                        #print("in train mode")
                         path_features = reduce_path_features_randomly(path_features,10000)
-                    print(path_features.shape)
+                    #print(path_features.shape)
                     omic1 = torch.tensor(self.genomic_features[self.omic_names[0]].iloc[idx].values)
                     omic2 = torch.tensor(self.genomic_features[self.omic_names[1]].iloc[idx].values)
                     omic3 = torch.tensor(self.genomic_features[self.omic_names[2]].iloc[idx].values)
